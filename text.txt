@@ -1,1 +1,4 @@
-warp://auth/desktop_redirect?refresh_token=AMf-vBx0BhNeQ4Pg9HoC2E5V1BqfCvdoj9wfBKhhqK4t3GQLSDE2BWzUybKhPj0xXu_eyZRLCAbrEA9JbyYX0EqM-e4YTvRfP2ONgQ8N6VrP61cbpNHwvQ2YozH3s1Xq0qdPjYWRUgmHOluYfgQe6PIdStpqvo2caGpuJo_oIk8kSAx1AMe3Vppypc8wiAW-fZFgGzBWROBoy6hd8r3adsPnH83WyW90P7nnHKtrYkjyh32XirGS_as&is_onboarded=false&user_uid=aLMyZnIYGPRXoL5HULWlQYoj6Ja2&deleted_anonymous_user=false&state=43dcce75-5a23-4bce-879a-840d03f4d819
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-archive-keyring.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-archive-keyring.gpg] https://pkg.cloudflare.com/cloudflareplus bullseye main" | sudo tee /etc/apt/sources.list.d/cloudflare-plus.list
+sudo apt update
+sudo apt install cloudflare-warp
